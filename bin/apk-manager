@@ -1,0 +1,121 @@
+#!/bin/bash
+
+BASE="/root/apk-manager"
+WORK="$BASE/work"
+RESULTS="$BASE/results"
+
+while true; do
+clear
+echo "╔════════════════════════════════════════╗"
+echo "║       ⚡ TECH NET APK MANAGER ⚡       ║"
+echo "╠════════════════════════════════════════╣"
+echo "║ 1 - 📦 Descompilar APK                ║"
+echo "║ 2 - 📂 Extrair arquivos               ║"
+echo "║ 3 - 🔍 Analisar DEX / código          ║"
+echo "║ 4 - 🔎 Procurar configurações          ║"
+echo "║ 5 - 🔐 Analisar criptografia           ║"
+echo "║ 6 - 🔑 Procurar chaves/métodos         ║"
+echo "║ 7 - 📋 Gerar relatório completo        ║"
+echo "║ 8 - 🛠️ Recompilar APK                  ║"
+echo "║ 9 - ✍️ Assinar APK                     ║"
+echo "║ 0 - Sair                                ║"
+echo "╚════════════════════════════════════════╝"
+echo
+read -rp "Escolha: " OP
+
+case "$OP" in
+1)
+ read -rp "Caminho do APK: " APK
+ [ -f "$APK" ] || { echo "❌ APK não encontrado"; read -rp "ENTER..."; continue; }
+ NAME="$(basename "$APK" .apk)"
+ mkdir -p "$WORK/$NAME"
+ apktool d -f "$APK" -o "$WORK/$NAME/descompilado"
+ echo "✅ Descompilado em $WORK/$NAME/descompilado"
+ read -rp "ENTER..."
+ ;;
+2)
+ read -rp "Caminho do APK: " APK
+ [ -f "$APK" ] || { echo "❌ APK não encontrado"; read -rp "ENTER..."; continue; }
+ NAME="$(basename "$APK" .apk)"
+ mkdir -p "$WORK/$NAME/extrato"
+ unzip -o "$APK" -d "$WORK/$NAME/extrato" >/dev/null
+ echo "✅ Extraído em $WORK/$NAME/extrato"
+ read -rp "ENTER..."
+ ;;
+3)
+ read -rp "Diretório para analisar: " DIR
+ [ -d "$DIR" ] || { echo "❌ Diretório não encontrado"; read -rp "ENTER..."; continue; }
+ OUT="$RESULTS/analise_$(date +%Y%m%d_%H%M%S)"
+ mkdir -p "$OUT"
+ find "$DIR" -type f \( -name "*.dex" -o -name "*.smali" -o -name "*.java" \) > "$OUT/arquivos_codigo.txt"
+ find "$DIR" -type f -name "*.dex" -exec strings {} \; > "$OUT/strings_dex.txt" 2>/dev/null
+ echo "✅ Análise salva em $OUT"
+ read -rp "ENTER..."
+ ;;
+4)
+ read -rp "Diretório do APK: " DIR
+ [ -d "$DIR" ] || { echo "❌ Diretório não encontrado"; read -rp "ENTER..."; continue; }
+ OUT="$RESULTS/config_$(date +%Y%m%d_%H%M%S).txt"
+ grep -RInaE 'config|server|host|hostname|port|proxy|websocket|xhttp|vless|vmess|trojan|ssh|tls|json|endpoint|url' "$DIR" 2>/dev/null > "$OUT"
+ echo "✅ Configurações encontradas:"
+ cat "$OUT"
+ read -rp "ENTER..."
+ ;;
+5)
+ read -rp "Diretório do APK: " DIR
+ [ -d "$DIR" ] || { echo "❌ Diretório não encontrado"; read -rp "ENTER..."; continue; }
+ OUT="$RESULTS/crypto_$(date +%Y%m%d_%H%M%S).txt"
+ grep -RInaE 'AES|DES|RSA|Cipher|SecretKey|SecretKeySpec|IvParameterSpec|MessageDigest|Base64|encrypt|decrypt|decode|encode' "$DIR" 2>/dev/null > "$OUT"
+ echo "✅ Métodos relacionados encontrados:"
+ cat "$OUT"
+ read -rp "ENTER..."
+ ;;
+6)
+ read -rp "Diretório do APK: " DIR
+ [ -d "$DIR" ] || { echo "❌ Diretório não encontrado"; read -rp "ENTER..."; continue; }
+ OUT="$RESULTS/chaves_$(date +%Y%m%d_%H%M%S).txt"
+ grep -RInaE 'key|secret|iv|salt|token|password|passphrase|decrypt|Cipher' "$DIR" 2>/dev/null > "$OUT"
+ echo "✅ Possíveis chaves/métodos:"
+ cat "$OUT"
+ read -rp "ENTER..."
+ ;;
+7)
+ read -rp "Diretório do APK: " DIR
+ [ -d "$DIR" ] || { echo "❌ Diretório não encontrado"; read -rp "ENTER..."; continue; }
+ OUT="$RESULTS/relatorio_$(date +%Y%m%d_%H%M%S).txt"
+ {
+ echo "TECH NET APK MANAGER"
+ echo "Data: $(date)"
+ echo
+ echo "=== ARQUIVOS ==="
+ find "$DIR" -type f
+ echo
+ echo "=== CONFIGURAÇÕES ==="
+ grep -RInaE 'config|server|host|port|proxy|websocket|xhttp|vless|vmess|trojan|ssh|tls|json|endpoint|url' "$DIR" 2>/dev/null
+ echo
+ echo "=== CRIPTOGRAFIA ==="
+ grep -RInaE 'AES|DES|RSA|Cipher|SecretKey|SecretKeySpec|IvParameterSpec|MessageDigest|Base64|encrypt|decrypt|decode|encode' "$DIR" 2>/dev/null
+ } > "$OUT"
+ echo "✅ Relatório salvo em $OUT"
+ read -rp "ENTER..."
+ ;;
+8)
+ read -rp "Diretório descompilado: " DIR
+ read -rp "APK de saída: " OUT
+ apktool b "$DIR" -o "$OUT"
+ echo "✅ APK recompilado."
+ read -rp "ENTER..."
+ ;;
+9)
+ echo "⚠️ Assinatura será configurada na próxima etapa."
+ read -rp "ENTER..."
+ ;;
+0)
+ exit 0
+ ;;
+*)
+ echo "❌ Opção inválida"
+ sleep 1
+ ;;
+esac
+done

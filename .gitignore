@@ -1,0 +1,18 @@
+# Segredos
+bot/config.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime
+work/*
+results/*
+backup/*
+*.log
+
+# Arquivos temporários
+*.tmp
+*.bak
+.DS_Store
